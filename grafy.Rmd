@@ -1,0 +1,316 @@
+---
+title: "Grafy pro seminář KSS/PV1, který se bude konat 4. května 2022"
+author: "Připravil: František Kalvas"
+date: "Aktualizováno: `r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true 
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# encoding: UTF-8
+# 'knitnout' = Ctrl + Shift + K
+
+
+```
+
+# Úvod
+
+Vážení a milí studující KSS/PV1, 
+
+<br>  
+
+upřímně Vám děkuji za všechna zaslaná data! Níže najdete grafy, které vznikly z dat Vašich nebo Vašich spolužáků. (Možná jste na jejich dotazník odpovídali.) Jsou tu data těch, kteří mi je zvládli poslat do středy 27. 4. 2022 a nezapomněli k nim připojit otázku, nebo vztah, který je především zajímá. K takto specifikovaným vztahům jsem připravil grafy a můžete se na ně všichni podívat a zamyslet se, co nám grafy říkají o vztazích proměnných, které zobrazují. Rád ještě doplním grafy u těch skupin, které mi sice poslaly data, ale žádné pořádné otázky nebo vztahy.  
+
+Ve středu se na semináři nejprve podíváme na grafy z této stránky. Řekneme si, jak by je bylo možné interpretovat, jaké jsou základní principy interpretace dat. Pokud zbyde čas, podíváme se i na data, která jsem dostal bez dobrých otázek/vztahů. Případně se můžeme podívat i na data, která jsem zatím nedostal. Každopádně budeme pracovat tak, že si budeme promítat výsledky a Vy se budete ve skupinkách radit, jak byste je interpretovali a společně budeme Vaše postřehy reflektovat a shrnovat.
+
+<br>  
+
+S úctou,  
+František
+
+```{r příprava}
+rm(list = ls())
+prejmenuj = function(data, pozice, nazvy) {
+  names(data)[pozice] = nazvy
+  data
+}
+
+```
+
+
+
+
+# Grafy 01: Stigmatizace duševně nemocných  
+
+Tým, který pořídil data nám vytipoval tři příčina a dva následky, celkem tedy 6 vztahů. Zde však najdete jen 3. Proč? Nu, na otázku, zda je stigmatizace duševně nemocných důležitý problém odpověděli jen 3 respondenti, že `Ne`, 149 odpovědělo, že `Ano`, a taková malá diverzita je při analýze nepoužitelná. Věcně je to hezká správa o světě -- lidem to není jedno, uvědomují si, že stigmatizace je důležitý problém. Ale výzkum na tom nepostavíme -- pokud (téměř) všichni odpovídají `Ano`, nedá se určit příčina. Budeme se tedy nakonec zabývat tím, co ovlivňuje názor, že stigmatizace je způsobená neinformovaností.
+
+```{r df2, message=FALSE, warning=FALSE}
+## Aktivace packagí
+library(readxl)
+library(forcats)
+library(dplyr)
+library(tidyr)
+
+
+## Načtení a úprava dat do objektu 'df'
+df2 = read_xlsx("data2.xlsx") %>%
+  select(4, 10, 5:7) %>%
+  prejmenuj(1:5, c("Vzdělání", "Informovanost", "Svědek", "Způsobeno\nneinformovaností", "Důležitý problém"))%>%
+  mutate(
+    Vzdělání =
+      recode(
+        Vzdělání,
+        `Odborné učiliště s výučním listem` = "Vyučen/a", `Střední škola s maturitou` = "SŠ",
+        `Vysoká škola (bakalářské studium)` = "VŠ", `Vysoká škola (magisterské studium)` = "VŠ",
+        `Vyšší odborné vzdělání` = "SŠ", `Základní škola` = "ZŠ") %>%
+      factor(levels = c("ZŠ", "Vyučen/a", "SŠ", "VŠ")),
+    Informovanost = factor(Informovanost, levels = c("Ano", "Spíše ano", "Spíše ne", "Ne")),
+    `Způsobeno\nneinformovaností` = 
+      factor(`Způsobeno\nneinformovaností`, 
+             levels = c("Ano", "Spíše ano", "Spíše ne", "Ne")) %>% fct_rev(),
+    across(.cols = everything(), ~factor(.x))
+    )
+
+```
+
+## Vliv informovanosti  
+
+Nejprve se podíváme na vliv informovanosti. Proměnná je měřená jako subjektivní dojem respondenta, jak je informovaný o problematice duševního onemocnění. 
+
+```{r graf 2.1}
+## Aktivace package pro tvorbu grafů (ano, chci, abyste si na to přišli sami...)
+library(ggplot2)
+
+
+## Vykreslení prvního barchartu dle vzoru:
+## Vliv 'Informovanosti' na názor, že stigmatizace je 'Způsobena neinformovaností'
+df2 %>% 
+  ggplot() +
+  aes(x = Informovanost, fill = `Způsobeno\nneinformovaností`) +
+  geom_bar(position = position_fill()) +
+  labs(title = "Vliv 'Informovanosti' na názor, že stigmatizace je 'Způsobena neinformovaností'", y = "Podíl") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), labels = function(x) paste(100 * x, "%")) +
+  scale_fill_brewer( palette = "Set2") +
+  theme_light()
+
+```
+
+## Vliv vzdělání  
+
+Nyní se podíváme na vliv vzdělání. Proměnná je měřená jako nejvyšší dosažené vzdělání. Aby se výsledky netříštily spoustou kategorií, sloučil jsem různé stupně VŠ vzdělání do kategorie `VŠ` a vyšší odborné a střední s maturitou jsem sloučil do `SŠ`.
+
+```{r graf 2.2}
+
+## Vykreslení druhého barchartu dle vzoru:
+## Vliv 'Vzdělání' na názor, že stigmatizace je 'Způsobena neinformovaností'
+df2 %>% 
+  ggplot() +
+  aes(x = Vzdělání, fill = `Způsobeno\nneinformovaností`) +
+  geom_bar(position = position_fill()) +
+  labs(title = "Vliv 'Vzdělání' na názor, že stigmatizace je 'Způsobena neinformovaností'", y = "Podíl") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), labels = function(x) paste(100 * x, "%")) +
+  scale_fill_brewer( palette = "Set2") +
+  theme_light() 
+
+```
+
+## Vliv svědectví    
+
+Nakonec se podíváme na vliv skutečnosti, zda byl respondent svědkem stigmatizace lidí s duševním onemocněním. 
+
+```{r graf 2.3}
+## Vykreslení třetího barchartu dle vzoru:
+## Vliv 'Svědectví' stigmatizace na názor, že stigmatizace je 'Způsobena neinformovaností'
+df2 %>% 
+  ggplot() +
+  aes(x = Svědek, fill = `Způsobeno\nneinformovaností`) +
+  geom_bar(position = position_fill()) +
+  labs(title = "Vliv 'Svědectví' stigmatizace na názor,\nže stigmatizace je 'Způsobena neinformovaností'", y = "Podíl") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), labels = function(x) paste(100 * x, "%")) +
+  scale_fill_brewer( palette = "Set2") +
+  theme_light() 
+
+```
+
+ 
+
+
+
+# Grafy 02: Adopce dětí  
+
+Tým, který pořídil data nám vytipoval jednoduchý vztah: Ovlivňuje věk respondentů ochotu adoptovat si dítě? Věk je kategorizovaný, přičemž kategorie `10-15` a `51 a více` se každá vyskytují jen jednou, proto je připojím k nejbližším kategoriím, aby se výsledky nedrobily. Jako další možné zajímavé faktory jsem narychlo vytipoval pohlaví a fakt, zda má respondent již děti. V datech jsem nechal ještě druhou závisle proměnnou: zda by respondent adoptoval postižené dítě. 
+
+```{r df1}
+## data1
+df1 = read_xlsx("data1.xlsx") %>%
+  select(3, 4, 6, 10, 13) %>%
+  prejmenuj(1:5, c("Pohlaví", "Věk", "Děti", "Adopce", "Adopce postiženého")) %>%
+  mutate(
+    Věk = recode(Věk, `10 - 15` = "16 - 20", `51 a více` = "31 - 50" ),
+    across(.cols = everything(), ~factor(.x)),
+    Adopce = fct_rev(Adopce),
+    `Adopce postiženého` = fct_rev(`Adopce postiženého`))
+
+
+
+## data1
+df1l = read_xlsx("data1.xlsx") %>%
+  select(3, 4, 6, 10, 13) %>%
+  prejmenuj(1:5, c("Pohlaví", "Věk", "Děti", "Prostá", "Postiženého")) %>%
+  mutate(
+    Věk = recode(Věk, `10 - 15` = "16 - 20", `51 a více` = "31 - 50" ),
+    across(.cols = everything(), ~factor(.x))) %>% 
+  pivot_longer(cols = 4:5, names_to = "Adopce", values_to = "Odpověď") %>% 
+  mutate(Odpověď = fct_rev(Odpověď))
+
+
+
+```
+
+
+## Samotná adopce: Věk a pohlaví
+
+Ovlivňuje ochotu k prosté adopci Věk v souhře s pohlavím?
+
+```{r graf 1.1}
+df1 %>% 
+  ggplot() +
+  aes(x = Věk, fill = Adopce) +
+  facet_grid(cols = vars(Pohlaví)) +
+  geom_bar(position = position_fill()) +
+  labs(title = "Vliv 'Věku' a 'Pohlaví' na ochotu k 'Adopci'", y = "Podíl") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), labels = function(x) paste(100 * x, "%")) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_light() 
+
+```
+
+
+## Samotná adopce: Věk a rodičovství
+
+Máme jen 40 respondentů, to je určitě málo na to udělat vliv celé trojkombinace věku, pohlaví a rodičovství. Podívejme se tedy zvlášť na vliv kombinace rodičovství a věku. Ovlivňuje ochotu k prosté adopci věk v souhře s rodičovstvím? Pozor! Není to chyba, že některé sloupečky chybí! To znamená, že pro některé kombinace nejsou pozorování... Co jsme se díky této 'náhodě' dozvěděli?
+
+```{r graf 1.2}
+df1 %>% 
+  ggplot() +
+  aes(x = Věk, fill = Adopce) +
+  facet_grid(cols = vars(Děti)) +
+  geom_bar(position = position_fill()) +
+  labs(title = "Vliv 'Věku' a 'Rodičovství' na ochotu k 'Adopci'", y = "Podíl") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), labels = function(x) paste(100 * x, "%")) +
+  scale_fill_brewer( palette = "Set2") +
+  theme_light() 
+
+```
+
+
+
+
+## Samotná adopce: Rodičovství a pohlaví
+
+Ovlivňuje ochotu k prosté adopci rodičovství v souhře s pohlavím?
+
+```{r graf 1.3}
+df1 %>% 
+  ggplot() +
+  aes(x = Děti, fill = Adopce) +
+  facet_grid(cols = vars(Pohlaví)) +
+  geom_bar(position = position_fill()) +
+  labs(title = "Vliv 'Rodičovství' a 'Pohlaví' na ochotu k 'Adopci'", y = "Podíl") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), labels = function(x) paste(100 * x, "%")) +
+  scale_fill_brewer( palette = "Set2") +
+  theme_light() 
+
+```
+
+
+## Adopce postiženého: Věk a pohlaví
+
+Ovlivňuje ochotu k adopci postiženého dítěte věk v souhře s pohlavím?
+
+```{r graf 1.4}
+df1 %>% 
+  ggplot() +
+  aes(x = Věk, fill = `Adopce postiženého`) +
+  facet_grid(cols = vars(Pohlaví)) +
+  geom_bar(position = position_fill()) +
+  labs(title = "Vliv 'Věku' a 'Pohlaví' na ochotu k 'Adopci'", y = "Podíl") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), labels = function(x) paste(100 * x, "%")) +
+  scale_fill_brewer("Adopce\npostiženého", palette = "Set2") +
+  theme_light() 
+
+```
+
+
+## Adopce postiženého: Věk a Rodičovství
+
+Ovlivňuje ochotu k adopci postiženého dítěte věk v souhře s rodičovstvím?
+
+```{r graf 1.5}
+df1 %>% 
+  ggplot() +
+  aes(x = Věk, fill = `Adopce postiženého`) +
+  facet_grid(cols = vars(Děti)) +
+  geom_bar(position = position_fill()) +
+  labs(title = "Vliv 'Věku' a 'Pohlaví' na ochotu k 'Adopci'", y = "Podíl") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), labels = function(x) paste(100 * x, "%")) +
+  scale_fill_brewer("Adopce\npostiženého", palette = "Set2") +
+  theme_light() 
+
+```
+
+
+## Adopce postiženého: Rodičovství a pohlaví
+
+Ovlivňuje ochotu k adopci postiženého dítěte rodičovství v souhře s pohlavím?
+
+```{r graf 1.6}
+df1 %>% 
+  ggplot() +
+  aes(x = Děti, fill = `Adopce postiženého`) +
+  facet_grid(cols = vars(Pohlaví)) +
+  geom_bar(position = position_fill()) +
+  labs(title = "Vliv 'Věku' a 'Pohlaví' na ochotu k 'Adopci'", y = "Podíl") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), labels = function(x) paste(100 * x, "%")) +
+  scale_fill_brewer("Adopce\npostiženého", palette = "Set2") +
+  theme_light() 
+
+```
+
+
+## Rozlišování typu adopce podle věku a pohlaví
+
+```{r graf  1.7}
+df1l %>% 
+  ggplot() +
+  aes(x = Adopce, fill = Odpověď) +
+   facet_grid(rows = vars(Pohlaví), cols = vars(Věk)) +
+  geom_bar(position = position_fill()) +
+  labs(title = "Akceptování podle typu 'Adopce', 'Věku' a 'Pohlaví'", y = "Podíl") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), labels = function(x) paste(100 * x, "%")) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_light() 
+
+```
+
+
+
+## Rozlišování typu adopce podle rodičovství a pohlaví
+
+```{r graf  1.8}
+df1l %>% 
+  ggplot() +
+  aes(x = Děti, fill = Odpověď) +
+   facet_grid(rows = vars(Pohlaví), cols = vars(Adopce)) +
+  geom_bar(position = position_fill()) +
+  labs(title = "Akceptování podle typu 'Adopce', 'Rodičovství' a 'Pohlaví'", y = "Podíl") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), labels = function(x) paste(100 * x, "%")) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_light() 
+
+```
