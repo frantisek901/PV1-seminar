@@ -314,3 +314,56 @@ df1l %>%
   theme_light() 
 
 ```
+
+
+# Grafy 03: Syndrom vyhoření 
+
+Další projekt se věnoval syndromu vyhoření. Kladl si otázku, jestli respondenti ví, co syndrom vyhoření je, což se ukázalo jako nezajímavá položka, neboť všichni odpověděli správně. Dále si tým klade otázku, zda si respondenti myslí, že stát má preventivní opatření. Tak se k tomu koukneme na graf! Ano, není tam příčina, nevadí, třeba ji najdeme na hodině:
+
+
+```{r data3, message=FALSE, warning=FALSE}
+library(tibble)
+library(readr)
+library(tidyr)
+
+## data3
+df3 = read_csv("data3.csv") %>%
+  select(2:6, 8) %>%
+  prejmenuj(1:6, c("Věk", "Pohlaví", "Vzdělání", "Ví", "Co", "Prevence")) %>%
+  rowid_to_column("ID") %>%
+  separate(Co, into = paste0("pol", 1:4), sep = ";") %>%
+  pivot_longer(6:9, values_to = "Uvedeno") %>%
+  select(-name) %>%
+  filter(!is.na(Uvedeno))
+
+```
+
+
+```{r graf 3.1}
+library(stringr)
+
+df3 %>% select(ID, Prevence) %>% unique() %>% 
+  mutate(Prevence = str_to_title(Prevence) %>% factor()) %>% 
+  ggplot() +
+  aes(x = Prevence, fill = Prevence) +
+  geom_bar() +
+  labs(title = "Má, podle názoru respondenta, stát nástroje na prevenci syndromu vyhoření?", y = "Počet uvedení", x = "") +
+  guides(fill = "none") +
+  theme_minimal()
+
+```
+
+Z pilnosti jsem vytvořil ještě jeden graf -- jak často respondenti uváděli jednotlivé aspekty syndromu vyhoření:  
+
+
+
+```{r graf 3.2}
+df3 %>%
+  ggplot() +
+  aes(x = Uvedeno, fill = Uvedeno) +
+  geom_bar() +
+  labs(title = "Jak často jednotlivé aspekty syndromu vyhoření respondenti uváděli", y = "Počet uvedení", x = "") +
+  guides(fill = "none") +
+  theme_minimal()
+```
+
