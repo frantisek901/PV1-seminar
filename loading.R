@@ -69,7 +69,7 @@ write_xlsx(df2, "../KSS-KA1/!data/df2.xlsx")
 
 
 
-## df3
+## data3
 df3 = read_csv("data3.csv") %>%
   select(2:6, 8) %>%
   prejmenuj(1:6, c("Vìk", "Pohlaví", "Vzdìlání", "Ví", "Co", "Prevence")) %>%
@@ -79,9 +79,30 @@ df3 = read_csv("data3.csv") %>%
   select(-name) %>%
   filter(!is.na(Uvedeno))
 
-df3 %>%
-  ggplot() +
-  aes(x = Uvedeno, fill = Uvedeno) +
-  geom_bar()
+
+
+## data4
+df4 = read_xlsx("Papazianova_Dotazník.xlsx") %>%
+  select(2:9) %>%
+  prejmenuj(1:8, c("Pohlaví", "Vzdìlání", "Zájem", "Zkušenosti", "Vliv pandemie", "Impuls", "Podpora rodiny", "Cílovka")) %>%
+  rowid_to_column("ID") %>%
+  separate(Impuls, into = paste0("Impuls_", 1:3), sep = ",") %>%
+  separate(Cílovka, into = paste0("Cílovka_", 1:5), sep = ",") %>%
+  pivot_longer(c(7:9, 11:15), values_to = "Odpovìï") %>%
+  filter(!is.na(Odpovìï)) %>%
+  separate(name, into = c("Otázka", "Poøadí"))
+
+
+
+## data5
+df5 = read.csv("Pøístup k lidem s postižením .csv", encoding = "UTF-8") %>%
+  select(2:9) %>%
+  prejmenuj(1:8, c("Pohlaví", "Vìk", "Mentální_Zkušenost", "Mentální_Reakce",
+                   "Tìlesné_Zkušenost", "Tìlesné_Reakce", "Praxe", "Postižený kolega")) %>%
+  rowid_to_column("ID") %>%
+  separate(Praxe, into = paste0("Praxe_", 1:2), sep = ";") %>%
+  pivot_longer(cols = 4:7) %>%
+  separate(name, into = c("Postižení", "name")) %>%
+  pivot_wider(id_cols = 1:7)
 
 

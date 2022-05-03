@@ -47,7 +47,7 @@ prejmenuj = function(data, pozice, nazvy) {
 
 # Grafy 01: Stigmatizace duševně nemocných  
 
-Tým, který pořídil data nám vytipoval tři příčina a dva následky, celkem tedy 6 vztahů. Zde však najdete jen 3. Proč? Nu, na otázku, zda je stigmatizace duševně nemocných důležitý problém odpověděli jen 3 respondenti, že `Ne`, 149 odpovědělo, že `Ano`, a taková malá diverzita je při analýze nepoužitelná. Věcně je to hezká správa o světě -- lidem to není jedno, uvědomují si, že stigmatizace je důležitý problém. Ale výzkum na tom nepostavíme -- pokud (téměř) všichni odpovídají `Ano`, nedá se určit příčina. Budeme se tedy nakonec zabývat tím, co ovlivňuje názor, že stigmatizace je způsobená neinformovaností.
+Tým, který pořídil data nám vytipoval tři příčiny a dva následky, celkem tedy 6 vztahů. Zde však najdete jen 3. Proč? Nu, na otázku, zda je stigmatizace duševně nemocných důležitý problém odpověděli jen 3 respondenti, že `Ne`, 149 odpovědělo, že `Ano`, a taková malá diverzita je při analýze nepoužitelná. Věcně je to hezká správa o světě -- lidem to není jedno, uvědomují si, že stigmatizace je důležitý problém. Ale výzkum na tom nepostavíme -- pokud (téměř) všichni odpovídají `Ano`, nedá se určit příčina. Budeme se tedy nakonec zabývat tím, co ovlivňuje názor, že stigmatizace je způsobená neinformovaností.
 
 ```{r df2, message=FALSE, warning=FALSE}
 ## Aktivace packagí
@@ -366,4 +366,80 @@ df3 %>%
   guides(fill = "none") +
   theme_minimal()
 ```
+
+# Grafy 04: Motivace studovat sociální práce   
+
+Další data jsem dostal bez otázek. Upravil jsem je a ukážu Vám tady graf na impulsy studovat sociální práce a graf na zamýšlné cílové skupiny:
+
+```{r data4, warning=FALSE, message=FALSE}
+
+df4 = read_xlsx("Papazianova_Dotazník.xlsx") %>%
+  select(2:9) %>%
+  prejmenuj(1:8, c("Pohlaví", "Vzdělání", "Zájem", "Zkušenosti", "Vliv pandemie", "Impuls", "Podpora rodiny", "Cílovka")) %>%
+  rowid_to_column("ID") %>%
+  separate(Impuls, into = paste0("Impuls_", 1:3), sep = ",") %>%
+  separate(Cílovka, into = paste0("Cílovka_", 1:5), sep = ",") %>%
+  pivot_longer(c(7:9, 11:15), values_to = "Odpověď") %>%
+  filter(!is.na(Odpověď)) %>%
+  separate(name, into = c("Otázka", "Pořadí")) %>% 
+  mutate(Odpověď = str_trim(Odpověď))
+
+```
+
+
+```{r graf 4.1}
+df4 %>% filter(Otázka == "Impuls") %>% 
+  ggplot() +
+  aes(y = Odpověď, fill = Odpověď) +
+  geom_bar() +
+  labs(title = "Impulsy studovat sociální práce", x = "Počet uvedení", y = "") +
+  guides(fill = "none") +
+  theme_minimal()
+
+
+```
+
+```{r graf 4.2}
+df4 %>% filter(Otázka == "Cílovka") %>% 
+  ggplot() +
+  aes(y = Odpověď, fill = Odpověď) +
+  geom_bar() +
+  labs(title = "Zamýšlené cílové skupiny", x = "Počet uvedení", y = "") +
+  guides(fill = "none") +
+  theme_minimal()
+
+```
+
+
+# Grafy 05: Přístup k postiženým osobám  
+
+Poslední data opět přišla bez otázky. Vyčistil jsem je a zkusil vyrobit nějaký graf -- jaké jsou reakce respondentů na tělesné a mentální postižení:
+
+```{r data5, warning=FALSE, message=FALSE}
+df5 = read.csv("Přístup k lidem s postižením .csv", encoding = "UTF-8") %>%
+  select(2:9) %>%
+  prejmenuj(1:8, c("Pohlaví", "Věk", "Mentální_Zkušenost", "Mentální_Reakce",
+                   "Tělesné_Zkušenost", "Tělesné_Reakce", "Praxe", "Postižený kolega")) %>%
+  rowid_to_column("ID") %>%
+  separate(Praxe, into = paste0("Praxe_", 1:2), sep = ";") %>%
+  pivot_longer(cols = 4:7) %>%
+  separate(name, into = c("Postižení", "name")) %>%
+  pivot_wider(id_cols = 1:7) %>% 
+  mutate(Reakce = factor(Reakce) )
+
+```
+
+```{r graf 5.1, warning=FALSE, message=FALSE}
+df5 %>% 
+  ggplot() +
+  aes(x = Postižení, fill = Reakce) +
+  geom_bar(position = position_dodge()) +
+  labs(title = "Reakce na jednotlivé typy postižení", y = "Počet uvedení", y = "Typy postižení") +
+  # guides(fill = "none") +
+  theme_minimal()
+
+```
+
+
+
 
