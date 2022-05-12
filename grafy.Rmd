@@ -1,16 +1,17 @@
 ---
 title: "Grafy pro seminář KSS/PV1, který se bude konat 4. května 2022"
-author: "Připravil: František Kalvas"
-date: "Aktualizováno: `r Sys.Date()`"
-output: 
+author: 'Připravil: František Kalvas'
+date: 'Aktualizováno: `r Sys.Date()`'
+output:
   html_document:
-    toc: true
-    toc_float: true 
+    toc: yes
     toc_depth: 3
+    toc_float: yes
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 
 # encoding: UTF-8
 # 'knitnout' = Ctrl + Shift + K
@@ -137,7 +138,81 @@ df2 %>%
 
 ```
 
- 
+## Replikace KSS/KA1
+
+V této části tytéž grafy (resp. první dva), jen je na ně použitá jiná geometrie `geom_count()`.
+
+
+```{r df2 a dfs2, message=FALSE, warning=FALSE}
+## Aktivace packagí
+library(readxl)
+library(forcats)
+library(dplyr)
+library(tidyr)
+
+
+## Načtení a úprava dat do objektu 'df'
+df2 = read_xlsx("data2.xlsx") %>%
+  
+  # Selekce proměnných
+  select(4, 10, 5:7) %>%
+  prejmenuj(1:5, c("Vzdělání", "Informovanost", "Svědek", "Způsobeno neinformovaností", "Důležitý problém"))%>%
+  mutate(
+    Vzdělání =
+      recode(
+        Vzdělání,
+        `Odborné učiliště s výučním listem` = "Vyučen/a", `Střední škola s maturitou` = "SŠ",
+        `Vysoká škola (bakalářské studium)` = "VŠ", `Vysoká škola (magisterské studium)` = "VŠ",
+        `Vyšší odborné vzdělání` = "SŠ", `Základní škola` = "ZŠ") %>%
+      factor(levels = c("ZŠ", "Vyučen/a", "SŠ", "VŠ")),
+    Informovanost = factor(Informovanost, levels = c("Ano", "Spíše ano", "Spíše ne", "Ne")),
+    `Způsobeno neinformovaností` = 
+      factor(`Způsobeno neinformovaností`, 
+             levels = c("Ano", "Spíše ano", "Spíše ne", "Ne")),
+    across(.cols = everything(), ~factor(.x))
+    )
+
+dfs24 = df2 %>% group_by(Informovanost, `Způsobeno neinformovaností`) %>%  summarise(n = n())
+dfs25 = df2 %>% group_by(Vzdělání, `Způsobeno neinformovaností`) %>%  summarise(n = n())
+
+```
+
+
+```{r graf 2.4, fig.width=7, fig.height=7}
+## Vykreslení prvního barchartu dle vzoru:
+## Vliv 'Informovanosti' na názor, že stigmatizace je 'Způsobena neinformovaností'
+df2 %>% 
+  ggplot() +
+  aes(x = Informovanost, y = `Způsobeno neinformovaností`) +
+  geom_count(color = "steelblue", alpha = 0.75) +
+  geom_text(data = dfs24, aes(label = n), size = 10, color = 'white') +
+  labs(title = "Vliv 'Informovanosti' na názor, že stigmatizace je 'Způsobena neinformovaností'", 
+       y = "Neinformovanost jako příčina",
+       caption = "Pozn.: Velikost kroužků a čísla v nich udávají počty respondentů, kteří zvolili příslušnou kombinaci odpovědí.") +
+  scale_size(range = c(15, 60)) +
+  guides(size = "none") +
+  theme_light()
+
+```
+
+
+
+```{r graf 2.5, fig.width=7, fig.height=7}
+## Vykreslení prvního barchartu dle vzoru:
+## Vliv 'Vzdělání' na názor, že stigmatizace je 'Způsobena neinformovaností'
+df2 %>% 
+  ggplot() +
+  aes(x = Vzdělání, y = `Způsobeno neinformovaností`) +
+  geom_count(color = "steelblue", alpha = 0.75) +
+  geom_text(data = dfs25, aes(label = n), size = 10, color = 'white') +
+  labs(title = "Vliv 'Vzdělání' na názor, že stigmatizace je 'Způsobena neinformovaností'", 
+       y = "Neinformovanost jako příčina",
+       caption = "Pozn.: Velikost kroužků a čísla v nich udávají počty respondentů, kteří zvolili příslušnou kombinaci odpovědí.") +
+  scale_size(range = c(15, 60)) +
+  guides(size = "none") +
+  theme_light()
+
+```
 
 
 
